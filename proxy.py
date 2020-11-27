@@ -36,7 +36,7 @@ async def init():
     devices_commands = await api(devices_command)
     devices = await api(devices_commands)
 
-    print(f"Detected devices: {devices}")
+    print("Detected devices: %s" % (devices,))
 
 def get_future(future):
     return loop.run_until_complete(future)
@@ -60,11 +60,12 @@ get_future(init())
 # }
 #
 
-@app.route("/tradfri/<select>", methods=["GET", "POST"])
+@app.route("/tradfri/<select>", methods=["PUT", "POST"])
 def tradfri(select):
     data = request.get_json()
+    select = select.lower()
     lights = get_command(gateway.get_devices())
-    target = [light for light in lights if light.name == select and light.has_light_control]
+    target = [light for light in lights if light.name.lower() == select and light.has_light_control]
     
     if not target:
         return jsonify({"status": "ERROR", "code": 404})
@@ -79,5 +80,21 @@ def tradfri(select):
     return jsonify({
             "status": "OK",
             "data": {"selected": [x.name for x in target]},
+        })
+
+@app.route("/tradfri/<select>", methods=["GET"])
+@app.route("/tradfri/", methods=["GET"])
+def tradfri_getter(select=None):
+    select = select.lower() if select is not None else None
+    lights = get_command(gateway.get_devices())
+    target = [light for light in lights if (light.name.lower() == select or select is None) and light.has_light_control]
+
+    print(target, dir(target[0]))
+
+    return jsonify({
+            "status": "OK",
+            "data": [{
+                "name": x.name,
+                } for x in target]
         })
 
