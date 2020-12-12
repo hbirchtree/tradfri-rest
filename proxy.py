@@ -63,6 +63,14 @@ get_future(init())
 @app.route("/tradfri/<select>", methods=["PUT", "POST"])
 def tradfri(select):
     data = request.get_json()
+
+    if data is None:
+        print('Received payload of type {}: {}'.format(request.content_type, request.data))
+        return jsonify({
+                "status": "ERROR",
+                "code": "400"
+            })
+
     select = select.lower()
     lights = get_command(gateway.get_devices())
     target = [light for light in lights if light.name.lower() == select and light.has_light_control]
@@ -89,12 +97,13 @@ def tradfri_getter(select=None):
     lights = get_command(gateway.get_devices())
     target = [light for light in lights if (light.name.lower() == select or select is None) and light.has_light_control]
 
-    print(target, dir(target[0]))
-
     return jsonify({
             "status": "OK",
             "data": [{
                 "name": x.name,
                 } for x in target]
         })
+
+if __name__ == '__main__':
+    app.run()
 
